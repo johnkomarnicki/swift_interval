@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Connect to Runwise</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  :root { --field: #f2f2f7; --border: #d1d1d6; --danger: #c92a2a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --field: #1c1c1e; --border: #3a3a3c; --danger: #ff6b6b; }
+  }
+  main { max-width: 440px; }
+  [hidden] { display: none !important; }
+  form { display: grid; gap: 12px; margin-top: 20px; }
+  label { font-weight: 600; font-size: 15px; }
+  input {
+    font: inherit; padding: 12px 14px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--field); color: var(--text);
+  }
+  input[name="code"] { letter-spacing: 6px; font-size: 22px; text-align: center; }
+  button {
+    font: inherit; font-weight: 600; padding: 12px 16px; border-radius: 12px; border: 0;
+    background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button.secondary { background: var(--field); color: var(--text); border: 1px solid var(--border); }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+  .link { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 400; text-decoration: underline; }
+  .error { color: var(--danger); }
+  ul.access { padding-left: 20px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Connect to Runwise</h1>
+
+  <p id="status">Loading…</p>
+  <p id="error" class="error" role="alert" hidden></p>
+
+  <!-- Step 1: sign in with an emailed code, like the app. -->
+  <section id="sign-in" hidden>
+    <p>Sign in with the email you use in the Runwise app.</p>
+    <form id="email-form">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required>
+      <button type="submit">Email me a code</button>
+    </form>
+    <form id="code-form" hidden>
+      <p id="code-sent"></p>
+      <label for="code">Code</label>
+      <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" required>
+      <button type="submit">Sign in</button>
+      <button type="button" class="link" id="change-email">Use a different email</button>
+    </form>
+    <p class="meta">Signed up with Apple and using Hide My Email? Use the relay address shown in iPhone Settings → Apple Account → Sign in with Apple → Runwise.</p>
+  </section>
+
+  <!-- Step 2: approve or deny the app asking for access. -->
+  <section id="consent" hidden>
+    <p><strong id="client-name">An app</strong> wants to read your Runwise data:</p>
+    <ul class="access">
+      <li>Your runs and walks, with distance, pace and heart rate</li>
+      <li>Your training plan and how you're tracking against it</li>
+      <li>Your coach's reviews and your chat with the coach</li>
+      <li>Your onboarding answers, saved workouts and routes</li>
+    </ul>
+    <p class="meta">It can only read. It can't change your plan, runs or account. You can disconnect it at any time from the app you're connecting.</p>
+    <div class="actions">
+      <button type="button" class="secondary" id="deny">Deny</button>
+      <button type="button" id="approve">Allow</button>
+    </div>
+    <p class="meta">Signed in as <span id="signed-in-as"></span>. <button type="button" class="link" id="sign-out">Not you?</button></p>
+  </section>
+
+  <p class="meta"><a href="../privacy.html">Privacy Policy</a> · <a href="../support.html">Support</a></p>
+</main>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm";
+
+  // The same project and publishable key the app ships with.
+  const supabase = createClient(
+    "https://zzybkcggdaafccuiaqfl.supabase.co",
+    "sb_publishable_h2RkYj8-euRUUewgzHFZQQ_wL_T_xww",
+  );
+
+  const $ = (id) => document.getElementById(id);
+  const authorizationId = new URLSearchParams(location.search).get("authorization_id");
+  let email = "";
+
+  function show(section) {
+    $("status").hidden = section !== "status";
+    $("sign-in").hidden = section !== "sign-in";
+    $("consent").hidden = section !== "consent";
+  }
+  function setStatus(text) {
+    $("status").textContent = text;
+    show("status");
+  }
+  function showError(text) {
+    $("error").textContent = text;
+    $("error").hidden = !text;
+  }
+  async function busy(button, work) {
+    button.disabled = true;
+    showError("");
+    try {
+      await work();
+    } catch (error) {
+      showError(error.message || "Something went wrong. Try again.");
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function start() {
+    if (!authorizationId) {
+      setStatus("This page opens when you connect an app such as Claude to Runwise. Start from that app.");
+      return;
+    }
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      show("sign-in");
+      $("email").focus();
+      return;
+    }
+    await loadConsent(data.session.user.email);
+  }
+
+  async function loadConsent(userEmail) {
+    setStatus("Loading…");
+    const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
+    if (error) {
+      setStatus("This request has expired or isn't valid. Go back to the app you're connecting and try again.");
+      return;
+    }
+    // Already approved before: Supabase hands back where to go.
+    if (!("authorization_id" in data)) {
+      setStatus("Connecting…");
+      location.assign(data.redirect_url);
+      return;
+    }
+    $("client-name").textContent = data.client?.name || "An app";
+    $("signed-in-as").textContent = data.user?.email || userEmail || "";
+    show("consent");
+  }
+
+  $("email-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const button = event.submitter;
+    busy(button, async () => {
+      email = $("email").value.trim();
+      // Only existing Runwise accounts: new accounts are made in the app.
+      const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+      if (error) {
+        throw new Error(
+          /signup|not allowed|not found/i.test(error.message)
+            ? "No Runwise account uses that email. Check the address, or sign up in the app first."
+            : error.message,
+        );
+      }
+      $("code-sent").textContent = `We emailed a 6-digit code to ${email}.`;
+      $("email-form").hidden = true;
+      $("code-form").hidden = false;
+      $("code").focus();
+    });
+  });
+
+  $("code-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    busy(event.submitter, async () => {
+      const { data, error } = await supabase.auth.verifyOtp({ email, token: $("code").value.trim(), type: "email" });
+      if (error) throw new Error("That code didn't work. Check it, or ask for a new one.");
+      await loadConsent(data.user?.email);
+    });
+  });
+
+  $("change-email").addEventListener("click", () => {
+    $("code-form").hidden = true;
+    $("email-form").hidden = false;
+    $("code").value = "";
+    showError("");
+    $("email").focus();
+  });
+
+  for (const [id, decide] of [["approve", "approveAuthorization"], ["deny", "denyAuthorization"]]) {
+    $(id).addEventListener("click", (event) => {
+      busy(event.currentTarget, async () => {
+        const { data, error } = await supabase.auth.oauth[decide](authorizationId);
+        if (error) throw new Error("Couldn't send your answer. Go back to the app you're connecting and try again.");
+        setStatus("Returning to the app…");
+        location.assign(data.redirect_url);
+      });
+    });
+  }
+
+  $("sign-out").addEventListener("click", async () => {
+    await supabase.auth.signOut({ scope: "local" });
+    show("sign-in");
+  });
+
+  start().catch(() => setStatus("Something went wrong. Reload the page to try again."));
+</script>
+</body>
+</html>
