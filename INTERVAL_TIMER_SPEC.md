@@ -14,7 +14,7 @@ I'm a runner training for a 5K with interval workouts. I want a simple iPhone ap
 - how many **rounds** of work + rest
 - an optional **cool-down**
 
-Then I press Start and the app runs the whole workout, **beeping during the last 5 seconds of every interval** so I know a switch is coming without looking at my phone.
+Then I press Start and the app runs the whole workout, **beeping during the last 3 seconds of every interval** so I know a switch is coming without looking at my phone.
 
 This app is for me only. It will not go on the App Store.
 
@@ -83,10 +83,10 @@ At the end: a simple "Workout complete" screen with total time, then back to hom
 
 ### 3.4 Audio countdown (the most important feature)
 
-- In the **last 5 seconds** of every interval (warm-up, work, rest, cool-down), play a **short beep** at 5, 4, 3, 2, and 1 seconds left.
+- In the **last 3 seconds** of every interval (warm-up, work, rest, cool-down), play a **short beep** at 3, 2, and 1 seconds left.
 - When the interval switches, play a **longer, different tone** so the change is unmistakable.
 - At the very end of the workout, play a distinct **finish sound** (e.g. three quick tones).
-- If an interval is 5 seconds or shorter, only beep for the seconds that exist.
+- If an interval is 3 seconds or shorter, only beep for the seconds that exist.
 - Beeps must be **on time**. Schedule them against the clock, not by counting timer ticks, so they don't drift over a 30+ minute workout.
 - Generate the tones in code (simple sine waves) or bundle tiny `.caf`/`.wav` files. No downloads.
 
@@ -167,11 +167,11 @@ Keep the timing logic (`WorkoutEngine`) separate from the UI so it can be unit t
 - Total time math is correct.
 - Given a start time and "now," the engine reports the right segment and time left.
 - Pause/resume shifts timing correctly.
-- Beep times are generated correctly, including intervals shorter than 5 seconds.
+- Beep times are generated correctly, including intervals shorter than 3 seconds.
 
 **Manual test checklist (walk me through these on my phone):**
 
-- [ ] Beeps at 5-4-3-2-1 and a longer tone at each switch
+- [ ] Beeps at 3-2-1 and a longer tone at each switch
 - [ ] Works with the screen locked for a full workout
 - [ ] Works with Spotify or Apple Music playing: music ducks for beeps, then comes back, and never stops
 - [ ] Works with the silent switch on
@@ -198,6 +198,6 @@ Please guide me step by step through:
 
 - I can create, save, edit, duplicate, and delete workouts.
 - I can run a full workout with warm-up, rounds, and cool-down.
-- Countdown beeps fire on time in the last 5 seconds of every interval, with the phone locked, with my music playing, and on silent.
+- Countdown beeps fire on time in the last 3 seconds of every interval, with the phone locked, with my music playing, and on silent.
 - Unit tests pass.
 - The app is installed and running on my iPhone.

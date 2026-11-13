@@ -7,67 +7,54 @@ struct WorkoutListView: View {
     @Query(sort: \Workout.createdAt) private var workouts: [Workout]
 
     @State private var editorTarget: EditorTarget?
-    @State private var showingSettings = false
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(workouts) { workout in
-                    NavigationLink(value: workout) {
-                        WorkoutRow(workout: workout)
-                    }
-                    .swipeActions(edge: .trailing) {
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            delete(workout)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ScreenTitle(eyebrow: "\(workouts.count) CUSTOM", title: "Workouts")
+                        .padding(.top, 16)
+
+                    newWorkoutCard
+                        .padding(.top, 20)
+
+                    if workouts.isEmpty {
+                        Text("Workouts you create will appear here.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 32)
+                    } else {
+                        VStack(spacing: 12) {
+                            ForEach(workouts) { workout in
+                                NavigationLink(value: workout) {
+                                    WorkoutCard(workout: workout)
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button("Edit", systemImage: "pencil") {
+                                        editorTarget = .edit(workout)
+                                    }
+                                    Button("Duplicate", systemImage: "plus.square.on.square") {
+                                        duplicate(workout)
+                                    }
+                                    Button("Delete", systemImage: "trash", role: .destructive) {
+                                        delete(workout)
+                                    }
+                                }
+                            }
                         }
-                    }
-                    .swipeActions(edge: .leading) {
-                        Button("Edit", systemImage: "pencil") {
-                            editorTarget = .edit(workout)
-                        }
-                        .tint(.blue)
-                        Button("Duplicate", systemImage: "plus.square.on.square") {
-                            duplicate(workout)
-                        }
-                        .tint(.indigo)
-                    }
-                    .contextMenu {
-                        Button("Edit", systemImage: "pencil") {
-                            editorTarget = .edit(workout)
-                        }
-                        Button("Duplicate", systemImage: "plus.square.on.square") {
-                            duplicate(workout)
-                        }
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            delete(workout)
-                        }
+                        .padding(.top, 24)
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
             }
-            .overlay {
-                if workouts.isEmpty {
-                    ContentUnavailableView(
-                        "No Workouts",
-                        systemImage: "figure.run",
-                        description: Text("Tap + to build your first interval workout.")
-                    )
-                }
-            }
-            .navigationTitle("Interval Run")
+            .background(Color(.systemGroupedBackground))
+            .clearsTabBar()
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Workout.self) { workout in
                 WorkoutDetailView(workout: workout)
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Settings", systemImage: "gearshape") {
-                        showingSettings = true
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("New Workout", systemImage: "plus") {
-                        editorTarget = .new
-                    }
-                }
             }
             .sheet(item: $editorTarget) { target in
                 switch target {
@@ -75,21 +62,45 @@ struct WorkoutListView: View {
                 case .edit(let workout): WorkoutEditorView(workout: workout)
                 }
             }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView()
-            }
             .task {
                 seedSampleIfNeeded()
             }
         }
     }
 
+    private var newWorkoutCard: some View {
+        Button {
+            editorTarget = .new
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "plus")
+                    .font(.system(size: 20, weight: .semibold))
+                    .frame(width: 48, height: 48)
+                    .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("New workout")
+                        .font(.title3.bold())
+                    Text("Build your own run/walk intervals")
+                        .font(.subheadline)
+                        .opacity(0.85)
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(.white)
+            .padding(18)
+            .background(AccentCardBackground())
+            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
     private func delete(_ workout: Workout) {
-        modelContext.delete(workout)
+        SyncService.delete(workout, in: modelContext)
     }
 
     private func duplicate(_ workout: Workout) {
         modelContext.insert(workout.duplicate())
+        SyncService.shared.scheduleSync()
     }
 
     /// Adds the sample workout on first launch only, so deleting it sticks.
@@ -98,6 +109,7 @@ struct WorkoutListView: View {
         guard !defaults.bool(forKey: AppSettings.hasSeededSampleKey) else { return }
         if workouts.isEmpty {
             modelContext.insert(Workout.sample())
+            SyncService.shared.scheduleSync()
         }
         defaults.set(true, forKey: AppSettings.hasSeededSampleKey)
     }
@@ -116,24 +128,30 @@ enum EditorTarget: Identifiable {
     }
 }
 
-private struct WorkoutRow: View {
+/// A saved workout: name, total time, the pattern in words and as a bar.
+private struct WorkoutCard: View {
     let workout: Workout
 
     var body: some View {
         let plan = workout.plan
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
                 Text(workout.name.isEmpty ? "Untitled workout" : workout.name)
                     .font(.headline)
-                Text(plan.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 8)
+                Text(TimeFormat.clock(plan.totalSeconds))
+                    .font(.headline.monospacedDigit())
+                RowChevron()
             }
-            Spacer()
-            Text(TimeFormat.clock(plan.totalSeconds))
-                .font(.subheadline.monospacedDigit())
+            Text(plan.summary)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.leading)
+            WorkoutSegmentBar(segments: plan.segments, height: 6)
         }
-        .padding(.vertical, 2)
+        .padding(18)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 }

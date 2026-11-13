@@ -12,7 +12,7 @@ struct IntervalStep: Codable, Equatable, Identifiable {
 ///
 /// `Workout` (the SwiftData model) stores these fields; everything that turns them
 /// into segments and times lives here so it can be unit tested without a database.
-struct WorkoutPlan: Equatable {
+struct WorkoutPlan: Codable, Equatable {
     static let roundsRange = 1...50
     /// Longest value the minutes + seconds pickers can produce (59:59).
     static let maxIntervalSeconds = 59 * 60 + 59
@@ -67,6 +67,41 @@ struct WorkoutPlan: Equatable {
 
     var totalSeconds: Int {
         segments.reduce(0) { $0 + $1.seconds }
+    }
+
+    /// Time spent in work (run) intervals.
+    var workTotalSeconds: Int {
+        segments.filter { $0.phase == .work }.reduce(0) { $0 + $1.seconds }
+    }
+
+    /// Time spent walking: rest intervals plus warm-up and cool-down.
+    var walkTotalSeconds: Int {
+        totalSeconds - workTotalSeconds
+    }
+
+    /// Work and rest intervals across all rounds, leaving out warm-up and cool-down.
+    var intervalCount: Int {
+        segments.filter { $0.round != nil }.count
+    }
+
+    /// A name for a workout left unnamed, e.g. "6 × 1:30 / 1m" or "2 × (1:30 / 3m)".
+    var suggestedName: String {
+        if usesPattern {
+            let steps = pattern.filter { $0.seconds > 0 }.map { Self.shortDuration($0.seconds) }
+            return steps.count == 1 ? "\(rounds) × \(steps[0])" : "\(rounds) × (\(steps.joined(separator: " / ")))"
+        }
+        var name = "\(rounds) × \(Self.shortDuration(workSeconds))"
+        if restSeconds > 0 {
+            name += " / \(Self.shortDuration(restSeconds))"
+        }
+        return name
+    }
+
+    /// "1m" for whole minutes, "45s" under a minute, otherwise "1:30".
+    static func shortDuration(_ seconds: Int) -> String {
+        if seconds < 60 { return "\(seconds)s" }
+        if seconds % 60 == 0 { return "\(seconds / 60)m" }
+        return TimeFormat.clock(seconds)
     }
 
     /// Switches between "work + rest" and a custom pattern. The first switch to a

@@ -9,3 +9,6 @@ build/
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+# ElevenLabs API key for scripts/voice/generate_voice.py
+scripts/voice/.env

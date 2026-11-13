@@ -152,6 +152,6 @@ final class IntervalPatternTests: XCTestCase {
             [0, 90, 180, 360, 540, 630, 720, 900]
         )
         XCTAssertEqual(cues.last, Cue(offset: 1080, kind: .finish))
-        XCTAssertEqual(cues.filter { $0.kind == .countdown }.count, 8 * 5)
+        XCTAssertEqual(cues.filter { $0.kind == .countdown }.count, 8 * 3)
     }
 }

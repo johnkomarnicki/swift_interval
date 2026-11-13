@@ -17,11 +17,25 @@ final class Workout {
     var usesPattern: Bool = false
     /// JSON-encoded `[IntervalStep]`, nil when there is no custom pattern.
     var patternData: Data? = nil
+    /// Id of this workout's row in Supabase. Nil only for workouts saved before
+    /// accounts existed; one is assigned on the first sync.
+    var syncID: UUID? = nil
+    var updatedAt: Date? = nil
+    /// Changed on this phone and not uploaded yet.
+    var needsUpload: Bool = true
 
     init(name: String, plan: WorkoutPlan, createdAt: Date = .now) {
         self.name = name
         self.createdAt = createdAt
+        self.syncID = UUID()
+        self.updatedAt = createdAt
         self.plan = plan
+    }
+
+    /// Call after editing, so the change is uploaded.
+    func markChanged() {
+        updatedAt = .now
+        needsUpload = true
     }
 
     /// The timing settings as a value type. Setting it copies every field back.

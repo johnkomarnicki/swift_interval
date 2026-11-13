@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 import UIKit
 
@@ -8,12 +9,25 @@ struct PlayerView: View {
     let onExit: (Bool) -> Void
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var modelContext
+    @Environment(ReviewStore.self) private var reviews
     @State private var confirmingEnd = false
+    /// `syncID` of the saved history record, once the results are in.
+    @State private var recordID: UUID?
+    @AppStorage(AppSettings.playerMapModeKey) private var mapMode = PlayerMapMode.overview
+    @State private var isMapExpanded = false
+    private let heartRate = HeartRateMonitor.shared
 
     var body: some View {
         Group {
             if session.isFinished {
-                CompleteView(name: session.name, totalTime: session.totalTime) {
+                CompleteView(
+                    name: session.name,
+                    totalTime: session.totalTime,
+                    tracksDistance: session.liveDistance != nil,
+                    results: session.results,
+                    recordID: recordID
+                ) {
                     onExit(true)
                 }
             } else {
@@ -22,6 +36,22 @@ struct PlayerView: View {
         }
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true
+            // Saves to history even if the player has closed by the time the
+            // results are ready (ending early).
+            let context = modelContext
+            let reviews = reviews
+            session.onResultsReady = { results in
+                let record = WorkoutRecord(results: results)
+                context.insert(record)
+                try? context.save()
+                SyncService.shared.scheduleSync()
+                recordID = record.syncID
+                // A program session ended early never reaches the Complete
+                // screen, so the coach is asked to look at it straight away.
+                if !results.completed, let link = results.programLink, let syncID = record.syncID {
+                    Task { await reviews.requestRunReview(programID: link.programID, recordID: syncID) }
+                }
+            }
             session.start()
         }
         .onDisappear {
@@ -43,56 +73,17 @@ struct PlayerView: View {
     private var player: some View {
         let segment = session.currentSegment
         let phase = segment?.phase ?? .coolDown
-        return ZStack {
-            phase.color
-                .ignoresSafeArea()
-                .animation(.easeInOut(duration: 0.3), value: phase)
-
-            VStack(spacing: 0) {
-                header
-
-                Spacer(minLength: 12)
-
-                Text(phase.title)
-                    .font(.system(size: 52, weight: .heavy, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-
-                if let round = segment?.round {
-                    Text("ROUND \(round) OF \(session.plan.rounds)")
-                        .font(.title2.weight(.bold))
-                        .opacity(0.9)
-                        .padding(.top, 4)
-                }
-
-                Text(TimeFormat.countdown(session.status.timeLeftInSegment))
-                    .font(.system(size: 150, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.3)
-                    .padding(.horizontal)
-                    .accessibilityLabel("Time left in interval")
-
-                if session.isPaused {
-                    Text("PAUSED")
-                        .font(.title2.weight(.heavy))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(.black.opacity(0.25), in: Capsule())
-                }
-
-                Text(nextLabel)
-                    .font(.title3.weight(.semibold))
-                    .opacity(0.85)
-                    .padding(.top, 12)
-
-                Spacer(minLength: 12)
-
-                controls
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 12)
-            .foregroundStyle(.white)
+        return PlayerScaffold(
+            eyebrow: "INTERVAL WORKOUT",
+            title: session.name,
+            tint: phase.color,
+            source: session.liveDistance?.source,
+            showsMap: showsMap,
+            isMapExpanded: $isMapExpanded
+        ) { bottomInset in
+            RunMapBackground(route: session.route, trail: session.trail, position: session.position, tint: phase.color, bottomInset: bottomInset)
+        } sheet: {
+            sheet(segment: segment, phase: phase)
         }
         .confirmationDialog("End this workout?", isPresented: $confirmingEnd, titleVisibility: .visible) {
             Button("End Workout", role: .destructive) {
@@ -103,61 +94,84 @@ struct PlayerView: View {
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .top) {
-            Text(session.name)
-                .font(.headline)
-                .lineLimit(1)
-                .opacity(0.85)
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("TOTAL LEFT")
-                    .font(.caption.weight(.bold))
-                    .opacity(0.8)
-                Text(TimeFormat.countdown(session.status.totalRemaining))
-                    .font(.title2.weight(.semibold))
-                    .monospacedDigit()
-            }
-        }
-        .padding(.top, 8)
+    /// A live map needs GPS, and the runner can switch it off in Settings.
+    private var showsMap: Bool {
+        session.usesGPS && !DistancePermissions.locationDenied && mapMode != .off
     }
 
-    private var controls: some View {
-        HStack(alignment: .center) {
-            controlButton(systemImage: "xmark", size: 76, label: "End workout") {
-                confirmingEnd = true
+    /// Only the phase, clock and controls while the map is enlarged.
+    private var isCompact: Bool { showsMap && isMapExpanded }
+
+    private func sheet(segment: Segment?, phase: Phase) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 10) {
+                PhasePill(text: phase.title, tint: phase.color)
+                if let subtitle = subtitle(segment) {
+                    Text(subtitle)
+                        .font(.subheadline.weight(.semibold))
+                        .opacity(0.85)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                Spacer(minLength: 8)
+                if let next = session.nextSegment {
+                    NextChip(text: "\(next.phase.title.capitalized) \(TimeFormat.clock(next.seconds))", dotColor: next.phase.color)
+                } else {
+                    NextChip(text: "Finish", dotColor: .white)
+                }
             }
-            Spacer()
-            controlButton(
-                systemImage: session.isPaused ? "play.fill" : "pause.fill",
-                size: 112,
-                label: session.isPaused ? "Resume" : "Pause"
-            ) {
-                session.togglePause()
+
+            PlayerClockRow(
+                time: TimeFormat.countdown(session.status.timeLeftInSegment),
+                timeAccessibilityLabel: "Time left in interval",
+                sideTitle: "TOTAL LEFT",
+                sideValue: TimeFormat.countdown(session.status.totalRemaining),
+                size: isCompact ? 72 : (showsMap ? 112 : 136),
+                isPaused: session.isPaused
+            )
+
+            if !isCompact {
+                SegmentProgressBar(
+                    segments: session.engine.segments,
+                    starts: session.engine.segmentStarts,
+                    elapsed: session.status.elapsed
+                )
+                if !stats.isEmpty {
+                    PlayerStatGrid(stats: stats)
+                }
             }
-            Spacer()
-            controlButton(systemImage: "forward.end.fill", size: 76, label: "Skip to next interval") {
-                session.skip()
-            }
+
+            PlayerControls(
+                endSystemImage: "xmark",
+                endLabel: "End workout",
+                onEnd: { confirmingEnd = true },
+                isPaused: session.isPaused,
+                tint: phase.color,
+                onTogglePause: { session.togglePause() },
+                onSkip: { session.skip() }
+            )
+            .padding(.top, 4)
         }
-        .padding(.horizontal, 8)
     }
 
-    private func controlButton(systemImage: String, size: CGFloat, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: size * 0.38, weight: .bold))
-                .frame(width: size, height: size)
-                .background(.white.opacity(0.22), in: Circle())
-                .overlay(Circle().stroke(.white.opacity(0.5), lineWidth: 2))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
+    private func subtitle(_ segment: Segment?) -> String? {
+        if session.isPaused { return "Paused" }
+        return segment?.round.map { "Round \($0) of \(session.plan.rounds)" }
     }
 
-    private var nextLabel: String {
-        guard let next = session.nextSegment else { return "Next: Finish" }
-        return "Next: \(next.phase.title) \(TimeFormat.clock(next.seconds))"
+    private var stats: [PlayerStat] {
+        var stats: [PlayerStat] = []
+        let distance = session.liveDistance
+        if let distance {
+            stats.append(.pace("PACE", seconds: distance.intervalSeconds, meters: distance.interval))
+        }
+        if heartRate.isLive {
+            stats.append(.heartRate(heartRate))
+        }
+        if let distance {
+            stats.append(.distance("INTERVAL", meters: distance.interval))
+            stats.append(.distance("DISTANCE", meters: distance.total))
+        }
+        return stats
     }
 }

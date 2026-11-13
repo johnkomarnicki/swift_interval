@@ -5,9 +5,10 @@ import os
 /// Owns the audio session and plays workout cues at exact times.
 ///
 /// How it stays on time and works in the background:
-/// - Sounds are generated sine-wave buffers queued on an `AVAudioPlayerNode` at
-///   precise sample positions, so the audio hardware plays them on schedule even
-///   if the main thread is busy. No timer counts seconds.
+/// - Tones are generated sine-wave buffers and spoken prompts are pre-rendered
+///   voice buffers (`SpeechRenderer`). Both are queued on player nodes at precise
+///   sample positions, so the audio hardware plays them on schedule even if the
+///   main thread is busy. No timer counts seconds.
 /// - Workout time is tied to the host clock (`mach_absolute_time`) through an
 ///   anchor taken whenever the schedule changes (start, resume, skip).
 /// - The engine keeps running for the whole workout. With the "audio" background
@@ -19,49 +20,93 @@ import os
 final class AudioCueScheduler {
     static let shared = AudioCueScheduler()
 
-    /// Beep loudness relative to the system volume (0...1).
+    /// Cue loudness relative to the system volume (0...1).
     var volume: Float = Float(AppSettings.defaultBeepVolume) {
-        didSet { player.volume = volume }
+        didSet {
+            tonePlayer.volume = volume
+            voicePlayer.volume = volume
+            promptPlayer.volume = volume
+        }
     }
     var vibrateOnCountdown = false
 
-    /// How far ahead the player is started when sounds are (re)queued.
-    private static let startLatency: TimeInterval = 0.03
+    /// How far ahead the players are started when sounds are (re)queued.
+    nonisolated private static let startLatency: TimeInterval = 0.03
     /// A cue due up to this long ago still plays (e.g. the tone right after Skip).
-    private static let lateTolerance: TimeInterval = 0.1
+    nonisolated private static let lateTolerance: TimeInterval = 0.1
 
     private let session = AVAudioSession.sharedInstance()
     private let engine = AVAudioEngine()
-    private let player = AVAudioPlayerNode()
+    private let tonePlayer = AVAudioPlayerNode()
+    private let voicePlayer = AVAudioPlayerNode()
+    /// Plays prompts added mid-workout (`addPrompt`) without restarting the
+    /// other players, which would cut off sounds already playing.
+    private let promptPlayer = AVAudioPlayerNode()
     private let format: AVAudioFormat
-    private var buffers: [CueKind: AVAudioPCMBuffer] = [:]
+    private var toneBuffers: [CueKind: AVAudioPCMBuffer] = [:]
+    private let speech: SpeechRenderer
     private let log = Logger(subsystem: "IntervalRun", category: "Audio")
 
     private var isActive = false
     private var isDucking = false
-    /// Cues still to play, in workout-elapsed time.
+    /// Everything most recently passed to `schedule`, kept so the queue can be
+    /// rebuilt when more voice prompts finish rendering. Empty while paused.
+    private var scheduledCues: [Cue] = []
+    /// Cues still to play as they will actually sound, in workout-elapsed time.
     private var upcoming: [Cue] = []
     private var duckWindows: [ClosedRange<TimeInterval>] = []
     /// Workout time `anchorElapsed` happens at host clock tick `anchorHostTime`.
     private var anchorHostTime: UInt64 = 0
     private var anchorElapsed: TimeInterval = 0
+    /// Host-clock seconds pinned to sample 0 of the players' timelines.
+    private var playersStartSeconds: TimeInterval = 0
+    /// Mid-workout prompts waiting for their speech to render.
+    private var pendingPrompts: [Cue] = []
     /// Duck/unduck and vibration callbacks waiting to fire.
     private var timers: [DispatchWorkItem] = []
     private var pendingDeactivation: DispatchWorkItem?
+    private var pendingSpeechRefresh: DispatchWorkItem?
     private var observers: [NSObjectProtocol] = []
 
     private init() {
         format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
-        engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: format)
-        player.volume = volume
-        for kind in CueKind.allCases {
-            buffers[kind] = ToneGenerator.buffer(for: kind, format: format)
+        speech = SpeechRenderer(format: format, coachVoice: AppSettings.coachVoice)
+        engine.attach(tonePlayer)
+        engine.attach(voicePlayer)
+        engine.attach(promptPlayer)
+        engine.connect(tonePlayer, to: engine.mainMixerNode, format: format)
+        engine.connect(voicePlayer, to: engine.mainMixerNode, format: format)
+        engine.connect(promptPlayer, to: engine.mainMixerNode, format: format)
+        tonePlayer.volume = volume
+        voicePlayer.volume = volume
+        promptPlayer.volume = volume
+        for kind in CueKind.tones {
+            toneBuffers[kind] = ToneGenerator.buffer(for: kind, format: format)
         }
+        speech.onRendered = { [weak self] in self?.speechDidRender() }
         observeSystemEvents()
     }
 
     // MARK: - Public API
+
+    /// Starts rendering the voice prompts in `cues`, in the coach voice chosen in
+    /// Settings, so they're ready when needed. Safe to call repeatedly; already
+    /// rendered phrases are skipped.
+    func prepareSpeech(for cues: [Cue]) {
+        speech.coachVoice = AppSettings.coachVoice
+        speech.prepare(CuePlanner.phrases(in: cues))
+    }
+
+    /// Adds a spoken prompt whose words are only known during the workout (the
+    /// distance of the interval just finished). It's rendered on the fly, then
+    /// slotted in at `offset` or just after any speech already queued there.
+    /// It's dropped if it would crowd the countdown, or if the workout is paused.
+    func addPrompt(_ announcement: Announcement, notBefore offset: TimeInterval) {
+        guard isActive, !scheduledCues.isEmpty else { return }
+        pendingPrompts.append(Cue(offset: offset, kind: .speech(announcement)))
+        speech.prepare([announcement])
+        insertReadyPrompts()
+    }
 
     /// Activates the audio session (mixing with other apps) and starts the engine.
     /// Call when a workout starts.
@@ -83,29 +128,18 @@ final class AudioCueScheduler {
     /// Replaces everything queued with `cues`, treating workout time `elapsed` as now.
     /// Call on start, resume and skip.
     func schedule(_ cues: [Cue], from elapsed: TimeInterval) {
-        guard isActive else { return }
-        cancelTimers()
-        anchorHostTime = mach_absolute_time()
-        anchorElapsed = elapsed
-        upcoming = cues.filter { $0.offset >= elapsed - Self.lateTolerance }
-        duckWindows = CuePlanner.duckWindows(for: upcoming)
-
-        let duckNow = duckWindows.contains { $0.contains(elapsed) }
-        if duckNow != isDucking {
-            setDucking(duckNow) // re-queues sounds after cycling the session
-        } else {
-            queueSounds()
-        }
-        scheduleTimers(from: elapsed)
+        schedule(cues, from: elapsed, lateTolerance: Self.lateTolerance)
     }
 
     /// Silences everything queued (e.g. on pause). The session stays active so the
     /// app keeps running in the background.
     func clear() {
         cancelTimers()
+        scheduledCues = []
+        pendingPrompts = []
         upcoming = []
         duckWindows = []
-        player.stop()
+        stopPlayers()
         setDucking(false)
     }
 
@@ -124,14 +158,20 @@ final class AudioCueScheduler {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
-    /// Plays "beep, beep, TONE" for the Settings screen.
-    func playTestSound() {
-        activate()
-        let cues = [
-            Cue(offset: 0.15, kind: .countdown),
-            Cue(offset: 1.15, kind: .countdown),
+    /// The cues `playTestSound` plays: "two, one" (spoken or beeped), then the switch tone.
+    static func testCues(voiceCountdown: Bool) -> [Cue] {
+        [
+            Cue(offset: 0.15, kind: voiceCountdown ? .speech(.count(2)) : .countdown),
+            Cue(offset: 1.15, kind: voiceCountdown ? .speech(.count(1)) : .countdown),
             Cue(offset: 2.15, kind: .transition),
         ]
+    }
+
+    /// Plays a short sample for the Settings screen.
+    func playTestSound(voiceCountdown: Bool) {
+        let cues = Self.testCues(voiceCountdown: voiceCountdown)
+        prepareSpeech(for: cues)
+        activate()
         schedule(cues, from: 0)
         deactivate(after: 2.15 + CueKind.transition.soundDuration + 0.5)
     }
@@ -143,10 +183,144 @@ final class AudioCueScheduler {
         do {
             try session.setActive(true)
             try startEngine()
-            queueSounds()
+            queueSounds(lateTolerance: 0)
         } catch {
             log.error("Recovering audio failed: \(error.localizedDescription)")
         }
+    }
+
+    // MARK: - Scheduling
+
+    private func schedule(_ cues: [Cue], from elapsed: TimeInterval, lateTolerance: TimeInterval) {
+        guard isActive else { return }
+        cancelTimers()
+        scheduledCues = cues
+        anchorHostTime = mach_absolute_time()
+        anchorElapsed = elapsed
+        upcoming = playable(cues.filter { $0.offset >= elapsed - lateTolerance })
+        duckWindows = CuePlanner.duckWindows(for: upcoming, duration: soundDuration(of:))
+
+        let duckNow = duckWindows.contains { $0.contains(elapsed) }
+        if duckNow != isDucking {
+            setDucking(duckNow) // re-queues sounds after cycling the session
+        } else {
+            queueSounds(lateTolerance: lateTolerance)
+        }
+        scheduleTimers(from: elapsed)
+    }
+
+    /// Cues as they will actually sound: a spoken number that isn't rendered yet
+    /// falls back to a beep, other unrendered speech is skipped, and speech that
+    /// would overlap is thinned out by priority.
+    private func playable(_ cues: [Cue]) -> [Cue] {
+        let available = cues.compactMap { cue -> Cue? in
+            guard let announcement = cue.kind.announcement else { return cue }
+            if speech.buffer(for: announcement.text) != nil { return cue }
+            if case .count = announcement { return Cue(offset: cue.offset, kind: .countdown) }
+            return nil
+        }
+        return CuePlanner.resolvingSpeechOverlaps(available, duration: soundDuration(of:))
+    }
+
+    private func soundDuration(of kind: CueKind) -> TimeInterval {
+        if let announcement = kind.announcement, let duration = speech.duration(of: announcement.text) {
+            return duration
+        }
+        return kind.soundDuration
+    }
+
+    /// Workout-elapsed time right now, according to the current anchor.
+    private func currentElapsed() -> TimeInterval {
+        anchorElapsed + AVAudioTime.seconds(forHostTime: mach_absolute_time()) - AVAudioTime.seconds(forHostTime: anchorHostTime)
+    }
+
+    private func speechDidRender() {
+        insertReadyPrompts()
+        scheduleSpeechRefresh()
+    }
+
+    /// More voice prompts are ready: rebuild the queue so they replace their
+    /// fallbacks. Waits until no sounds are playing so nothing gets cut off, and
+    /// coalesces bursts of renders into one rebuild.
+    private func scheduleSpeechRefresh() {
+        guard isActive, !scheduledCues.isEmpty, pendingSpeechRefresh == nil else { return }
+        let now = currentElapsed()
+        let delay = max(0.5, (duckWindows.first { $0.contains(now) }?.upperBound ?? now) - now + 0.05)
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.pendingSpeechRefresh = nil
+                guard self.isActive, !self.scheduledCues.isEmpty else { return }
+                let now = self.currentElapsed()
+                if self.duckWindows.contains(where: { $0.contains(now) }) {
+                    self.scheduleSpeechRefresh() // sounds started meanwhile; try after them
+                } else {
+                    self.schedule(self.scheduledCues, from: now, lateTolerance: 0)
+                }
+            }
+        }
+        pendingSpeechRefresh = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+    }
+
+    // MARK: - Mid-workout prompts
+
+    private func insertReadyPrompts() {
+        guard !pendingPrompts.isEmpty else { return }
+        guard isActive, !scheduledCues.isEmpty else {
+            pendingPrompts = []
+            return
+        }
+        var waiting: [Cue] = []
+        for prompt in pendingPrompts {
+            guard let text = prompt.kind.announcement?.text else { continue }
+            if speech.buffer(for: text) != nil {
+                insert(prompt)
+            } else if !speech.hasFailed(text) {
+                waiting.append(prompt)
+            }
+        }
+        pendingPrompts = waiting
+    }
+
+    /// Slots a rendered prompt into the live queue on `promptPlayer`, which shares
+    /// the other players' timeline, so nothing already queued is restarted.
+    private func insert(_ prompt: Cue) {
+        guard let announcement = prompt.kind.announcement,
+              let buffer = speech.buffer(for: announcement.text) else { return }
+        let now = currentElapsed()
+        let duration = soundDuration(of: prompt.kind)
+        let gap = 0.25
+
+        // Start at the requested time, or after any speech already there.
+        var offset = max(prompt.offset, now + 0.15)
+        for cue in upcoming.sorted(by: { $0.offset < $1.offset }) where cue.kind.announcement != nil {
+            let cueEnd = cue.offset + soundDuration(of: cue.kind) + gap
+            if cue.offset < offset + duration + gap, cueEnd > offset {
+                offset = cueEnd
+            }
+        }
+        let cue = Cue(offset: offset, kind: prompt.kind)
+        let candidate = (upcoming + [cue]).sorted { $0.offset < $1.offset }
+        // Give up rather than talk over (or knock out) anything already queued.
+        guard CuePlanner.resolvingSpeechOverlaps(candidate, duration: soundDuration(of:)).count == candidate.count else {
+            return
+        }
+
+        scheduledCues = (scheduledCues + [cue]).sorted { $0.offset < $1.offset }
+        upcoming = candidate
+        let rate = format.sampleRate
+        let delta = hostSeconds(forElapsed: offset) - playersStartSeconds
+        guard delta > 0 else { return }
+        promptPlayer.scheduleBuffer(buffer, at: AVAudioTime(sampleTime: AVAudioFramePosition((delta * rate).rounded()), atRate: rate), options: [])
+
+        // Make sure music is ducked while it plays.
+        duckWindows = CuePlanner.duckWindows(for: upcoming, duration: soundDuration(of:))
+        cancelCueTimers()
+        if duckWindows.contains(where: { $0.contains(now) }), !isDucking {
+            setDucking(true)
+        }
+        scheduleTimers(from: now)
     }
 
     // MARK: - Engine and queue
@@ -157,24 +331,43 @@ final class AudioCueScheduler {
         try engine.start()
     }
 
-    /// Queues every remaining cue on the player at its exact sample position.
-    private func queueSounds() {
-        player.stop()
+    private func stopPlayers() {
+        tonePlayer.stop()
+        voicePlayer.stop()
+        promptPlayer.stop()
+    }
+
+    /// Queues every remaining cue on its player at its exact sample position.
+    private func queueSounds(lateTolerance: TimeInterval = AudioCueScheduler.lateTolerance) {
+        stopPlayers()
         guard isActive, engine.isRunning, !upcoming.isEmpty else { return }
 
         let rate = format.sampleRate
         let startHost = mach_absolute_time() + AVAudioTime.hostTime(forSeconds: Self.startLatency)
         let startSeconds = AVAudioTime.seconds(forHostTime: startHost)
+        playersStartSeconds = startSeconds
 
         for cue in upcoming {
-            guard let buffer = buffers[cue.kind] else { continue }
+            let player: AVAudioPlayerNode
+            let buffer: AVAudioPCMBuffer?
+            if let announcement = cue.kind.announcement {
+                player = voicePlayer
+                buffer = speech.buffer(for: announcement.text)
+            } else {
+                player = tonePlayer
+                buffer = toneBuffers[cue.kind]
+            }
+            guard let buffer else { continue }
             let delta = hostSeconds(forElapsed: cue.offset) - startSeconds
-            if delta < -Self.lateTolerance { continue } // already played
+            if delta < -lateTolerance - Self.startLatency { continue } // already played
             let frame = AVAudioFramePosition((max(0, delta) * rate).rounded())
             player.scheduleBuffer(buffer, at: AVAudioTime(sampleTime: frame, atRate: rate), options: [])
         }
-        // Sample 0 of the player's timeline is pinned to `startHost`.
-        player.play(at: AVAudioTime(hostTime: startHost))
+        // Sample 0 of all players' timelines is pinned to `startHost`.
+        let start = AVAudioTime(hostTime: startHost)
+        tonePlayer.play(at: start)
+        voicePlayer.play(at: start)
+        promptPlayer.play(at: start)
     }
 
     /// Host-clock seconds at which a workout-elapsed time is reached.
@@ -193,7 +386,7 @@ final class AudioCueScheduler {
     /// sounds and ~0.4 s after it, when nothing of ours is playing.
     private func setDucking(_ duck: Bool) {
         guard isActive, duck != isDucking else { return }
-        player.stop()
+        stopPlayers()
         engine.stop()
         do {
             try? session.setActive(false, options: duck ? [] : .notifyOthersOnDeactivation)
@@ -224,7 +417,7 @@ final class AudioCueScheduler {
             }
         }
         if vibrateOnCountdown {
-            for cue in upcoming where cue.kind == .countdown && cue.offset >= elapsed {
+            for cue in upcoming where cue.kind.isCountdown && cue.offset >= elapsed {
                 addTimer(atElapsed: cue.offset) { _ in
                     AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
                 }
@@ -244,17 +437,26 @@ final class AudioCueScheduler {
         DispatchQueue.main.asyncAfter(deadline: .now() + max(0, delay), execute: work)
     }
 
-    private func cancelTimers() {
+    /// Cancels the duck/unduck and vibration timers.
+    private func cancelCueTimers() {
         timers.forEach { $0.cancel() }
         timers = []
+    }
+
+    private func cancelTimers() {
+        cancelCueTimers()
+        pendingSpeechRefresh?.cancel()
+        pendingSpeechRefresh = nil
     }
 
     private func deactivateNow() {
         pendingDeactivation = nil
         cancelTimers()
+        scheduledCues = []
+        pendingPrompts = []
         upcoming = []
         duckWindows = []
-        player.stop()
+        stopPlayers()
         engine.stop()
         guard isActive else { return }
         isActive = false
@@ -285,9 +487,10 @@ final class AudioCueScheduler {
     }
 }
 
-/// Builds the cue sounds as sine-wave buffers, so no audio files are needed.
+/// Builds the tone cues as sine-wave buffers, so no audio files are needed.
 enum ToneGenerator {
     static func buffer(for kind: CueKind, format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        guard !kind.notes.isEmpty else { return nil }
         let rate = format.sampleRate
         let frameCount = AVAudioFrameCount((kind.soundDuration * rate).rounded(.up))
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount),

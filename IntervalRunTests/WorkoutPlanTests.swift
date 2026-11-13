@@ -99,6 +99,27 @@ final class WorkoutPlanTests: XCTestCase {
         XCTAssertEqual(plan(work: 45, rest: 0, rounds: 8).summary, "8 × 0:45")
     }
 
+    // MARK: Editor summary
+
+    func testSuggestedName() {
+        XCTAssertEqual(plan(work: 90, rest: 60, rounds: 6).suggestedName, "6 × 1:30 / 1m")
+        XCTAssertEqual(plan(work: 120, rest: 0, rounds: 4).suggestedName, "4 × 2m")
+        XCTAssertEqual(plan(work: 45, rest: 75, rounds: 8).suggestedName, "8 × 45s / 1:15")
+        var custom = plan(rounds: 2)
+        custom.setUsesPattern(true)
+        custom.pattern.append(IntervalStep(phase: .work, seconds: 180))
+        XCTAssertEqual(custom.suggestedName, "2 × (1:30 / 1m / 3m)")
+    }
+
+    func testRunAndWalkTotals() {
+        // 6 runs and 5 walks, with a 5:00 warm-up counted as walking.
+        let sixRounds = plan(warmUp: 300, work: 90, rest: 60, rounds: 6)
+        XCTAssertEqual(sixRounds.intervalCount, 11)
+        XCTAssertEqual(sixRounds.workTotalSeconds, 9 * 60)
+        XCTAssertEqual(sixRounds.walkTotalSeconds, 5 * 60 + 5 * 60)
+        XCTAssertEqual(sixRounds.workTotalSeconds + sixRounds.walkTotalSeconds, sixRounds.totalSeconds)
+    }
+
     func testValidation() {
         XCTAssertTrue(plan().isValid)
         XCTAssertTrue(plan(rest: 0).isValid)

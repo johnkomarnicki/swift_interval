@@ -1,0 +1,1292 @@
+{
+ "voices": {
+  "allison": "xctasy8XvGp2cVO9HL9k",
+  "brad": "zCgijgIKIMkFHnzXcCva"
+ },
+ "clips": [
+  {
+   "name": "countdown",
+   "text": "Three... Two... One..."
+  },
+  {
+   "name": "halfway",
+   "text": "Halfway there."
+  },
+  {
+   "name": "phase-work",
+   "text": "Work."
+  },
+  {
+   "name": "phase-rest",
+   "text": "Rest."
+  },
+  {
+   "name": "phase-warm-up",
+   "text": "Warm-up."
+  },
+  {
+   "name": "cool-down",
+   "text": "Cool-down."
+  },
+  {
+   "name": "work",
+   "text": "Work."
+  },
+  {
+   "name": "rest",
+   "text": "Rest."
+  },
+  {
+   "name": "left-1",
+   "text": "Last interval."
+  },
+  {
+   "name": "left-2",
+   "text": "Two intervals left."
+  },
+  {
+   "name": "left-3",
+   "text": "Three intervals left."
+  },
+  {
+   "name": "left-4",
+   "text": "Four intervals left."
+  },
+  {
+   "name": "left-5",
+   "text": "Five intervals left."
+  },
+  {
+   "name": "left-6",
+   "text": "Six intervals left."
+  },
+  {
+   "name": "left-7",
+   "text": "Seven intervals left."
+  },
+  {
+   "name": "left-8",
+   "text": "Eight intervals left."
+  },
+  {
+   "name": "left-9",
+   "text": "Nine intervals left."
+  },
+  {
+   "name": "left-10",
+   "text": "Ten intervals left."
+  },
+  {
+   "name": "left-11",
+   "text": "Eleven intervals left."
+  },
+  {
+   "name": "left-12",
+   "text": "Twelve intervals left."
+  },
+  {
+   "name": "left-13",
+   "text": "Thirteen intervals left."
+  },
+  {
+   "name": "left-14",
+   "text": "Fourteen intervals left."
+  },
+  {
+   "name": "left-15",
+   "text": "Fifteen intervals left."
+  },
+  {
+   "name": "left-16",
+   "text": "Sixteen intervals left."
+  },
+  {
+   "name": "left-17",
+   "text": "Seventeen intervals left."
+  },
+  {
+   "name": "left-18",
+   "text": "Eighteen intervals left."
+  },
+  {
+   "name": "left-19",
+   "text": "Nineteen intervals left."
+  },
+  {
+   "name": "left-20",
+   "text": "Twenty intervals left."
+  },
+  {
+   "name": "left-21",
+   "text": "Twenty-one intervals left."
+  },
+  {
+   "name": "left-22",
+   "text": "Twenty-two intervals left."
+  },
+  {
+   "name": "left-23",
+   "text": "Twenty-three intervals left."
+  },
+  {
+   "name": "left-24",
+   "text": "Twenty-four intervals left."
+  },
+  {
+   "name": "left-25",
+   "text": "Twenty-five intervals left."
+  },
+  {
+   "name": "left-26",
+   "text": "Twenty-six intervals left."
+  },
+  {
+   "name": "left-27",
+   "text": "Twenty-seven intervals left."
+  },
+  {
+   "name": "left-28",
+   "text": "Twenty-eight intervals left."
+  },
+  {
+   "name": "left-29",
+   "text": "Twenty-nine intervals left."
+  },
+  {
+   "name": "left-30",
+   "text": "Thirty intervals left."
+  },
+  {
+   "name": "left-31",
+   "text": "Thirty-one intervals left."
+  },
+  {
+   "name": "left-32",
+   "text": "Thirty-two intervals left."
+  },
+  {
+   "name": "left-33",
+   "text": "Thirty-three intervals left."
+  },
+  {
+   "name": "left-34",
+   "text": "Thirty-four intervals left."
+  },
+  {
+   "name": "left-35",
+   "text": "Thirty-five intervals left."
+  },
+  {
+   "name": "left-36",
+   "text": "Thirty-six intervals left."
+  },
+  {
+   "name": "left-37",
+   "text": "Thirty-seven intervals left."
+  },
+  {
+   "name": "left-38",
+   "text": "Thirty-eight intervals left."
+  },
+  {
+   "name": "left-39",
+   "text": "Thirty-nine intervals left."
+  },
+  {
+   "name": "left-40",
+   "text": "Forty intervals left."
+  },
+  {
+   "name": "left-41",
+   "text": "Forty-one intervals left."
+  },
+  {
+   "name": "left-42",
+   "text": "Forty-two intervals left."
+  },
+  {
+   "name": "left-43",
+   "text": "Forty-three intervals left."
+  },
+  {
+   "name": "left-44",
+   "text": "Forty-four intervals left."
+  },
+  {
+   "name": "left-45",
+   "text": "Forty-five intervals left."
+  },
+  {
+   "name": "left-46",
+   "text": "Forty-six intervals left."
+  },
+  {
+   "name": "left-47",
+   "text": "Forty-seven intervals left."
+  },
+  {
+   "name": "left-48",
+   "text": "Forty-eight intervals left."
+  },
+  {
+   "name": "left-49",
+   "text": "Forty-nine intervals left."
+  },
+  {
+   "name": "left-50",
+   "text": "Fifty intervals left."
+  },
+  {
+   "name": "left-51",
+   "text": "Fifty-one intervals left."
+  },
+  {
+   "name": "left-52",
+   "text": "Fifty-two intervals left."
+  },
+  {
+   "name": "left-53",
+   "text": "Fifty-three intervals left."
+  },
+  {
+   "name": "left-54",
+   "text": "Fifty-four intervals left."
+  },
+  {
+   "name": "left-55",
+   "text": "Fifty-five intervals left."
+  },
+  {
+   "name": "left-56",
+   "text": "Fifty-six intervals left."
+  },
+  {
+   "name": "left-57",
+   "text": "Fifty-seven intervals left."
+  },
+  {
+   "name": "left-58",
+   "text": "Fifty-eight intervals left."
+  },
+  {
+   "name": "left-59",
+   "text": "Fifty-nine intervals left."
+  },
+  {
+   "name": "left-60",
+   "text": "Sixty intervals left."
+  },
+  {
+   "name": "left-61",
+   "text": "Sixty-one intervals left."
+  },
+  {
+   "name": "left-62",
+   "text": "Sixty-two intervals left."
+  },
+  {
+   "name": "left-63",
+   "text": "Sixty-three intervals left."
+  },
+  {
+   "name": "left-64",
+   "text": "Sixty-four intervals left."
+  },
+  {
+   "name": "left-65",
+   "text": "Sixty-five intervals left."
+  },
+  {
+   "name": "left-66",
+   "text": "Sixty-six intervals left."
+  },
+  {
+   "name": "left-67",
+   "text": "Sixty-seven intervals left."
+  },
+  {
+   "name": "left-68",
+   "text": "Sixty-eight intervals left."
+  },
+  {
+   "name": "left-69",
+   "text": "Sixty-nine intervals left."
+  },
+  {
+   "name": "left-70",
+   "text": "Seventy intervals left."
+  },
+  {
+   "name": "left-71",
+   "text": "Seventy-one intervals left."
+  },
+  {
+   "name": "left-72",
+   "text": "Seventy-two intervals left."
+  },
+  {
+   "name": "left-73",
+   "text": "Seventy-three intervals left."
+  },
+  {
+   "name": "left-74",
+   "text": "Seventy-four intervals left."
+  },
+  {
+   "name": "left-75",
+   "text": "Seventy-five intervals left."
+  },
+  {
+   "name": "left-76",
+   "text": "Seventy-six intervals left."
+  },
+  {
+   "name": "left-77",
+   "text": "Seventy-seven intervals left."
+  },
+  {
+   "name": "left-78",
+   "text": "Seventy-eight intervals left."
+  },
+  {
+   "name": "left-79",
+   "text": "Seventy-nine intervals left."
+  },
+  {
+   "name": "left-80",
+   "text": "Eighty intervals left."
+  },
+  {
+   "name": "left-81",
+   "text": "Eighty-one intervals left."
+  },
+  {
+   "name": "left-82",
+   "text": "Eighty-two intervals left."
+  },
+  {
+   "name": "left-83",
+   "text": "Eighty-three intervals left."
+  },
+  {
+   "name": "left-84",
+   "text": "Eighty-four intervals left."
+  },
+  {
+   "name": "left-85",
+   "text": "Eighty-five intervals left."
+  },
+  {
+   "name": "left-86",
+   "text": "Eighty-six intervals left."
+  },
+  {
+   "name": "left-87",
+   "text": "Eighty-seven intervals left."
+  },
+  {
+   "name": "left-88",
+   "text": "Eighty-eight intervals left."
+  },
+  {
+   "name": "left-89",
+   "text": "Eighty-nine intervals left."
+  },
+  {
+   "name": "left-90",
+   "text": "Ninety intervals left."
+  },
+  {
+   "name": "left-91",
+   "text": "Ninety-one intervals left."
+  },
+  {
+   "name": "left-92",
+   "text": "Ninety-two intervals left."
+  },
+  {
+   "name": "left-93",
+   "text": "Ninety-three intervals left."
+  },
+  {
+   "name": "left-94",
+   "text": "Ninety-four intervals left."
+  },
+  {
+   "name": "left-95",
+   "text": "Ninety-five intervals left."
+  },
+  {
+   "name": "left-96",
+   "text": "Ninety-six intervals left."
+  },
+  {
+   "name": "left-97",
+   "text": "Ninety-seven intervals left."
+  },
+  {
+   "name": "left-98",
+   "text": "Ninety-eight intervals left."
+  },
+  {
+   "name": "left-99",
+   "text": "Ninety-nine intervals left."
+  },
+  {
+   "name": "that-was",
+   "text": "That was"
+  },
+  {
+   "name": "whole-0",
+   "text": "zero"
+  },
+  {
+   "name": "whole-1",
+   "text": "one"
+  },
+  {
+   "name": "whole-2",
+   "text": "two"
+  },
+  {
+   "name": "whole-3",
+   "text": "three"
+  },
+  {
+   "name": "whole-4",
+   "text": "four"
+  },
+  {
+   "name": "whole-5",
+   "text": "five"
+  },
+  {
+   "name": "whole-6",
+   "text": "six"
+  },
+  {
+   "name": "whole-7",
+   "text": "seven"
+  },
+  {
+   "name": "whole-8",
+   "text": "eight"
+  },
+  {
+   "name": "whole-9",
+   "text": "nine"
+  },
+  {
+   "name": "whole-10",
+   "text": "ten"
+  },
+  {
+   "name": "whole-11",
+   "text": "eleven"
+  },
+  {
+   "name": "whole-12",
+   "text": "twelve"
+  },
+  {
+   "name": "whole-13",
+   "text": "thirteen"
+  },
+  {
+   "name": "whole-14",
+   "text": "fourteen"
+  },
+  {
+   "name": "whole-15",
+   "text": "fifteen"
+  },
+  {
+   "name": "whole-16",
+   "text": "sixteen"
+  },
+  {
+   "name": "whole-17",
+   "text": "seventeen"
+  },
+  {
+   "name": "whole-18",
+   "text": "eighteen"
+  },
+  {
+   "name": "whole-19",
+   "text": "nineteen"
+  },
+  {
+   "name": "whole-20",
+   "text": "twenty"
+  },
+  {
+   "name": "point-1",
+   "text": "point one"
+  },
+  {
+   "name": "point-2",
+   "text": "point two"
+  },
+  {
+   "name": "point-3",
+   "text": "point three"
+  },
+  {
+   "name": "point-4",
+   "text": "point four"
+  },
+  {
+   "name": "point-5",
+   "text": "point five"
+  },
+  {
+   "name": "point-6",
+   "text": "point six"
+  },
+  {
+   "name": "point-7",
+   "text": "point seven"
+  },
+  {
+   "name": "point-8",
+   "text": "point eight"
+  },
+  {
+   "name": "point-9",
+   "text": "point nine"
+  },
+  {
+   "name": "point-01",
+   "text": "point zero one"
+  },
+  {
+   "name": "point-02",
+   "text": "point zero two"
+  },
+  {
+   "name": "point-03",
+   "text": "point zero three"
+  },
+  {
+   "name": "point-04",
+   "text": "point zero four"
+  },
+  {
+   "name": "point-05",
+   "text": "point zero five"
+  },
+  {
+   "name": "point-06",
+   "text": "point zero six"
+  },
+  {
+   "name": "point-07",
+   "text": "point zero seven"
+  },
+  {
+   "name": "point-08",
+   "text": "point zero eight"
+  },
+  {
+   "name": "point-09",
+   "text": "point zero nine"
+  },
+  {
+   "name": "point-11",
+   "text": "point one one"
+  },
+  {
+   "name": "point-12",
+   "text": "point one two"
+  },
+  {
+   "name": "point-13",
+   "text": "point one three"
+  },
+  {
+   "name": "point-14",
+   "text": "point one four"
+  },
+  {
+   "name": "point-15",
+   "text": "point one five"
+  },
+  {
+   "name": "point-16",
+   "text": "point one six"
+  },
+  {
+   "name": "point-17",
+   "text": "point one seven"
+  },
+  {
+   "name": "point-18",
+   "text": "point one eight"
+  },
+  {
+   "name": "point-19",
+   "text": "point one nine"
+  },
+  {
+   "name": "point-21",
+   "text": "point two one"
+  },
+  {
+   "name": "point-22",
+   "text": "point two two"
+  },
+  {
+   "name": "point-23",
+   "text": "point two three"
+  },
+  {
+   "name": "point-24",
+   "text": "point two four"
+  },
+  {
+   "name": "point-25",
+   "text": "point two five"
+  },
+  {
+   "name": "point-26",
+   "text": "point two six"
+  },
+  {
+   "name": "point-27",
+   "text": "point two seven"
+  },
+  {
+   "name": "point-28",
+   "text": "point two eight"
+  },
+  {
+   "name": "point-29",
+   "text": "point two nine"
+  },
+  {
+   "name": "point-31",
+   "text": "point three one"
+  },
+  {
+   "name": "point-32",
+   "text": "point three two"
+  },
+  {
+   "name": "point-33",
+   "text": "point three three"
+  },
+  {
+   "name": "point-34",
+   "text": "point three four"
+  },
+  {
+   "name": "point-35",
+   "text": "point three five"
+  },
+  {
+   "name": "point-36",
+   "text": "point three six"
+  },
+  {
+   "name": "point-37",
+   "text": "point three seven"
+  },
+  {
+   "name": "point-38",
+   "text": "point three eight"
+  },
+  {
+   "name": "point-39",
+   "text": "point three nine"
+  },
+  {
+   "name": "point-41",
+   "text": "point four one"
+  },
+  {
+   "name": "point-42",
+   "text": "point four two"
+  },
+  {
+   "name": "point-43",
+   "text": "point four three"
+  },
+  {
+   "name": "point-44",
+   "text": "point four four"
+  },
+  {
+   "name": "point-45",
+   "text": "point four five"
+  },
+  {
+   "name": "point-46",
+   "text": "point four six"
+  },
+  {
+   "name": "point-47",
+   "text": "point four seven"
+  },
+  {
+   "name": "point-48",
+   "text": "point four eight"
+  },
+  {
+   "name": "point-49",
+   "text": "point four nine"
+  },
+  {
+   "name": "point-51",
+   "text": "point five one"
+  },
+  {
+   "name": "point-52",
+   "text": "point five two"
+  },
+  {
+   "name": "point-53",
+   "text": "point five three"
+  },
+  {
+   "name": "point-54",
+   "text": "point five four"
+  },
+  {
+   "name": "point-55",
+   "text": "point five five"
+  },
+  {
+   "name": "point-56",
+   "text": "point five six"
+  },
+  {
+   "name": "point-57",
+   "text": "point five seven"
+  },
+  {
+   "name": "point-58",
+   "text": "point five eight"
+  },
+  {
+   "name": "point-59",
+   "text": "point five nine"
+  },
+  {
+   "name": "point-61",
+   "text": "point six one"
+  },
+  {
+   "name": "point-62",
+   "text": "point six two"
+  },
+  {
+   "name": "point-63",
+   "text": "point six three"
+  },
+  {
+   "name": "point-64",
+   "text": "point six four"
+  },
+  {
+   "name": "point-65",
+   "text": "point six five"
+  },
+  {
+   "name": "point-66",
+   "text": "point six six"
+  },
+  {
+   "name": "point-67",
+   "text": "point six seven"
+  },
+  {
+   "name": "point-68",
+   "text": "point six eight"
+  },
+  {
+   "name": "point-69",
+   "text": "point six nine"
+  },
+  {
+   "name": "point-71",
+   "text": "point seven one"
+  },
+  {
+   "name": "point-72",
+   "text": "point seven two"
+  },
+  {
+   "name": "point-73",
+   "text": "point seven three"
+  },
+  {
+   "name": "point-74",
+   "text": "point seven four"
+  },
+  {
+   "name": "point-75",
+   "text": "point seven five"
+  },
+  {
+   "name": "point-76",
+   "text": "point seven six"
+  },
+  {
+   "name": "point-77",
+   "text": "point seven seven"
+  },
+  {
+   "name": "point-78",
+   "text": "point seven eight"
+  },
+  {
+   "name": "point-79",
+   "text": "point seven nine"
+  },
+  {
+   "name": "point-81",
+   "text": "point eight one"
+  },
+  {
+   "name": "point-82",
+   "text": "point eight two"
+  },
+  {
+   "name": "point-83",
+   "text": "point eight three"
+  },
+  {
+   "name": "point-84",
+   "text": "point eight four"
+  },
+  {
+   "name": "point-85",
+   "text": "point eight five"
+  },
+  {
+   "name": "point-86",
+   "text": "point eight six"
+  },
+  {
+   "name": "point-87",
+   "text": "point eight seven"
+  },
+  {
+   "name": "point-88",
+   "text": "point eight eight"
+  },
+  {
+   "name": "point-89",
+   "text": "point eight nine"
+  },
+  {
+   "name": "point-91",
+   "text": "point nine one"
+  },
+  {
+   "name": "point-92",
+   "text": "point nine two"
+  },
+  {
+   "name": "point-93",
+   "text": "point nine three"
+  },
+  {
+   "name": "point-94",
+   "text": "point nine four"
+  },
+  {
+   "name": "point-95",
+   "text": "point nine five"
+  },
+  {
+   "name": "point-96",
+   "text": "point nine six"
+  },
+  {
+   "name": "point-97",
+   "text": "point nine seven"
+  },
+  {
+   "name": "point-98",
+   "text": "point nine eight"
+  },
+  {
+   "name": "point-99",
+   "text": "point nine nine"
+  },
+  {
+   "name": "mile",
+   "text": "mile."
+  },
+  {
+   "name": "miles",
+   "text": "miles."
+  },
+  {
+   "name": "pace",
+   "text": "Pace,"
+  },
+  {
+   "name": "min-1",
+   "text": "one minute"
+  },
+  {
+   "name": "min-2",
+   "text": "two minutes"
+  },
+  {
+   "name": "min-3",
+   "text": "three minutes"
+  },
+  {
+   "name": "min-4",
+   "text": "four minutes"
+  },
+  {
+   "name": "min-5",
+   "text": "five minutes"
+  },
+  {
+   "name": "min-6",
+   "text": "six minutes"
+  },
+  {
+   "name": "min-7",
+   "text": "seven minutes"
+  },
+  {
+   "name": "min-8",
+   "text": "eight minutes"
+  },
+  {
+   "name": "min-9",
+   "text": "nine minutes"
+  },
+  {
+   "name": "min-10",
+   "text": "ten minutes"
+  },
+  {
+   "name": "min-11",
+   "text": "eleven minutes"
+  },
+  {
+   "name": "min-12",
+   "text": "twelve minutes"
+  },
+  {
+   "name": "min-13",
+   "text": "thirteen minutes"
+  },
+  {
+   "name": "min-14",
+   "text": "fourteen minutes"
+  },
+  {
+   "name": "min-15",
+   "text": "fifteen minutes"
+  },
+  {
+   "name": "min-16",
+   "text": "sixteen minutes"
+  },
+  {
+   "name": "min-17",
+   "text": "seventeen minutes"
+  },
+  {
+   "name": "min-18",
+   "text": "eighteen minutes"
+  },
+  {
+   "name": "min-19",
+   "text": "nineteen minutes"
+  },
+  {
+   "name": "min-20",
+   "text": "twenty minutes"
+  },
+  {
+   "name": "min-21",
+   "text": "twenty-one minutes"
+  },
+  {
+   "name": "min-22",
+   "text": "twenty-two minutes"
+  },
+  {
+   "name": "min-23",
+   "text": "twenty-three minutes"
+  },
+  {
+   "name": "min-24",
+   "text": "twenty-four minutes"
+  },
+  {
+   "name": "min-25",
+   "text": "twenty-five minutes"
+  },
+  {
+   "name": "min-26",
+   "text": "twenty-six minutes"
+  },
+  {
+   "name": "min-27",
+   "text": "twenty-seven minutes"
+  },
+  {
+   "name": "min-28",
+   "text": "twenty-eight minutes"
+  },
+  {
+   "name": "min-29",
+   "text": "twenty-nine minutes"
+  },
+  {
+   "name": "min-30",
+   "text": "thirty minutes"
+  },
+  {
+   "name": "sec-1",
+   "text": "one per mile."
+  },
+  {
+   "name": "sec-2",
+   "text": "two per mile."
+  },
+  {
+   "name": "sec-3",
+   "text": "three per mile."
+  },
+  {
+   "name": "sec-4",
+   "text": "four per mile."
+  },
+  {
+   "name": "sec-5",
+   "text": "five per mile."
+  },
+  {
+   "name": "sec-6",
+   "text": "six per mile."
+  },
+  {
+   "name": "sec-7",
+   "text": "seven per mile."
+  },
+  {
+   "name": "sec-8",
+   "text": "eight per mile."
+  },
+  {
+   "name": "sec-9",
+   "text": "nine per mile."
+  },
+  {
+   "name": "sec-10",
+   "text": "ten per mile."
+  },
+  {
+   "name": "sec-11",
+   "text": "eleven per mile."
+  },
+  {
+   "name": "sec-12",
+   "text": "twelve per mile."
+  },
+  {
+   "name": "sec-13",
+   "text": "thirteen per mile."
+  },
+  {
+   "name": "sec-14",
+   "text": "fourteen per mile."
+  },
+  {
+   "name": "sec-15",
+   "text": "fifteen per mile."
+  },
+  {
+   "name": "sec-16",
+   "text": "sixteen per mile."
+  },
+  {
+   "name": "sec-17",
+   "text": "seventeen per mile."
+  },
+  {
+   "name": "sec-18",
+   "text": "eighteen per mile."
+  },
+  {
+   "name": "sec-19",
+   "text": "nineteen per mile."
+  },
+  {
+   "name": "sec-20",
+   "text": "twenty per mile."
+  },
+  {
+   "name": "sec-21",
+   "text": "twenty-one per mile."
+  },
+  {
+   "name": "sec-22",
+   "text": "twenty-two per mile."
+  },
+  {
+   "name": "sec-23",
+   "text": "twenty-three per mile."
+  },
+  {
+   "name": "sec-24",
+   "text": "twenty-four per mile."
+  },
+  {
+   "name": "sec-25",
+   "text": "twenty-five per mile."
+  },
+  {
+   "name": "sec-26",
+   "text": "twenty-six per mile."
+  },
+  {
+   "name": "sec-27",
+   "text": "twenty-seven per mile."
+  },
+  {
+   "name": "sec-28",
+   "text": "twenty-eight per mile."
+  },
+  {
+   "name": "sec-29",
+   "text": "twenty-nine per mile."
+  },
+  {
+   "name": "sec-30",
+   "text": "thirty per mile."
+  },
+  {
+   "name": "sec-31",
+   "text": "thirty-one per mile."
+  },
+  {
+   "name": "sec-32",
+   "text": "thirty-two per mile."
+  },
+  {
+   "name": "sec-33",
+   "text": "thirty-three per mile."
+  },
+  {
+   "name": "sec-34",
+   "text": "thirty-four per mile."
+  },
+  {
+   "name": "sec-35",
+   "text": "thirty-five per mile."
+  },
+  {
+   "name": "sec-36",
+   "text": "thirty-six per mile."
+  },
+  {
+   "name": "sec-37",
+   "text": "thirty-seven per mile."
+  },
+  {
+   "name": "sec-38",
+   "text": "thirty-eight per mile."
+  },
+  {
+   "name": "sec-39",
+   "text": "thirty-nine per mile."
+  },
+  {
+   "name": "sec-40",
+   "text": "forty per mile."
+  },
+  {
+   "name": "sec-41",
+   "text": "forty-one per mile."
+  },
+  {
+   "name": "sec-42",
+   "text": "forty-two per mile."
+  },
+  {
+   "name": "sec-43",
+   "text": "forty-three per mile."
+  },
+  {
+   "name": "sec-44",
+   "text": "forty-four per mile."
+  },
+  {
+   "name": "sec-45",
+   "text": "forty-five per mile."
+  },
+  {
+   "name": "sec-46",
+   "text": "forty-six per mile."
+  },
+  {
+   "name": "sec-47",
+   "text": "forty-seven per mile."
+  },
+  {
+   "name": "sec-48",
+   "text": "forty-eight per mile."
+  },
+  {
+   "name": "sec-49",
+   "text": "forty-nine per mile."
+  },
+  {
+   "name": "sec-50",
+   "text": "fifty per mile."
+  },
+  {
+   "name": "sec-51",
+   "text": "fifty-one per mile."
+  },
+  {
+   "name": "sec-52",
+   "text": "fifty-two per mile."
+  },
+  {
+   "name": "sec-53",
+   "text": "fifty-three per mile."
+  },
+  {
+   "name": "sec-54",
+   "text": "fifty-four per mile."
+  },
+  {
+   "name": "sec-55",
+   "text": "fifty-five per mile."
+  },
+  {
+   "name": "sec-56",
+   "text": "fifty-six per mile."
+  },
+  {
+   "name": "sec-57",
+   "text": "fifty-seven per mile."
+  },
+  {
+   "name": "sec-58",
+   "text": "fifty-eight per mile."
+  },
+  {
+   "name": "sec-59",
+   "text": "fifty-nine per mile."
+  },
+  {
+   "name": "per-mile",
+   "text": "per mile."
+  }
+ ]
+}

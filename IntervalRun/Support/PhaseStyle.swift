@@ -11,3 +11,13 @@ extension Phase {
         }
     }
 }
+
+/// Free run screen backgrounds, matching the work and rest colors.
+extension FreeActivity {
+    var color: Color {
+        switch self {
+        case .run: Phase.work.color
+        case .walk: Phase.rest.color
+        }
+    }
+}

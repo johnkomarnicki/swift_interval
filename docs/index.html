@@ -540,7 +540,7 @@ footer a:hover { color: var(--ink); }
           <div class="cues">
             <div class="cue-card"><div class="when"><span class="n">1</span>At the switch</div><div class="say">Tone, then "Work. 5 intervals left."</div></div>
             <div class="cue-card"><div class="when"><span class="n">2</span>Halfway</div><div class="say">"Halfway there."</div></div>
-            <div class="cue-card"><div class="when"><span class="n">3</span>Last 5 seconds</div><div class="say">"Five, four, three, two, one."</div></div>
+            <div class="cue-card"><div class="when"><span class="n">3</span>Last 3 seconds</div><div class="say">"Three, two, one."</div></div>
             <div class="cue-card"><div class="when"><span class="n">4</span>Into your rest</div><div class="say">"That was 0.21 miles. 8 minutes 15 per mile."</div></div>
           </div>
         </div>
@@ -768,7 +768,7 @@ document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
   const WORK = 30, REST = 15, ROUNDS = 8, FIRST_ROUND = 3;
   const WORK_MPS = 1 / 495;  // miles per second at 8:15 /mi
   const REST_MPS = 1 / 900;  // 15:00 /mi walk
-  const words = ["one", "two", "three", "four", "five"];
+  const words = ["one", "two", "three"];
 
   const START_MILES = 0.42;
   let round = FIRST_ROUND, phase = "work", left = WORK, intervalMiles = 0, total = START_MILES;
@@ -837,7 +837,7 @@ document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
         round += 1;
         announce("Work");
       }
-    } else if (left <= 5) {
+    } else if (left <= 3) {
       say(`“${words[left - 1][0].toUpperCase()}${words[left - 1].slice(1)}…”`, 900);
     } else if (phase === "work" && left === WORK / 2) {
       say("“Halfway there.”", 2000);

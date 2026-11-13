@@ -6,9 +6,9 @@ final class CuePlannerTests: XCTestCase {
         cues.filter { $0.kind == kind }.map(\.offset)
     }
 
-    func testBeepsInLastFiveSecondsOfEveryInterval() {
+    func testBeepsInLastThreeSecondsOfEveryInterval() {
         let cues = CuePlanner.cues(for: [Segment(.warmUp, 60), Segment(.work, 30, round: 1)])
-        XCTAssertEqual(offsets(cues, .countdown), [55, 56, 57, 58, 59, 85, 86, 87, 88, 89])
+        XCTAssertEqual(offsets(cues, .countdown), [57, 58, 59, 87, 88, 89])
         XCTAssertEqual(offsets(cues, .transition), [0, 60])
         XCTAssertEqual(offsets(cues, .finish), [90])
     }
@@ -20,15 +20,15 @@ final class CuePlannerTests: XCTestCase {
         XCTAssertEqual(cues.last, Cue(offset: TimeInterval(plan.totalSeconds), kind: .finish))
     }
 
-    func testSixSecondIntervalGetsAllFiveBeeps() {
-        let cues = CuePlanner.cues(for: [Segment(.work, 6, round: 1)])
-        XCTAssertEqual(offsets(cues, .countdown), [1, 2, 3, 4, 5])
+    func testFourSecondIntervalGetsAllThreeBeeps() {
+        let cues = CuePlanner.cues(for: [Segment(.work, 4, round: 1)])
+        XCTAssertEqual(offsets(cues, .countdown), [1, 2, 3])
     }
 
     func testShortIntervalsOnlyBeepForSecondsThatExist() {
         // Beep at "N seconds left" where N equals the interval length would collide
         // with the transition tone at its start, so it is left out.
-        XCTAssertEqual(offsets(CuePlanner.cues(for: [Segment(.rest, 5, round: 1)]), .countdown), [1, 2, 3, 4])
+        XCTAssertEqual(offsets(CuePlanner.cues(for: [Segment(.rest, 5, round: 1)]), .countdown), [2, 3, 4])
         XCTAssertEqual(offsets(CuePlanner.cues(for: [Segment(.rest, 3, round: 1)]), .countdown), [1, 2])
         XCTAssertEqual(offsets(CuePlanner.cues(for: [Segment(.rest, 2, round: 1)]), .countdown), [1])
         XCTAssertEqual(offsets(CuePlanner.cues(for: [Segment(.rest, 1, round: 1)]), .countdown), [])
@@ -36,7 +36,7 @@ final class CuePlannerTests: XCTestCase {
 
     func testShortIntervalInsideWorkout() {
         let cues = CuePlanner.cues(for: [Segment(.work, 10, round: 1), Segment(.rest, 3, round: 1), Segment(.work, 10, round: 2)])
-        XCTAssertEqual(offsets(cues, .countdown), [5, 6, 7, 8, 9, 11, 12, 18, 19, 20, 21, 22])
+        XCTAssertEqual(offsets(cues, .countdown), [7, 8, 9, 11, 12, 20, 21, 22])
         XCTAssertEqual(offsets(cues, .transition), [0, 10, 13])
         XCTAssertEqual(offsets(cues, .finish), [23])
     }
@@ -57,7 +57,7 @@ final class CuePlannerTests: XCTestCase {
         let windows = CuePlanner.duckWindows(for: cues)
         // Start tone, the switch at 60 (with its countdown), and the finish at 120.
         XCTAssertEqual(windows.count, 3)
-        XCTAssertEqual(windows[1].lowerBound, 55 - 0.35, accuracy: 1e-9)
+        XCTAssertEqual(windows[1].lowerBound, 57 - 0.35, accuracy: 1e-9)
         XCTAssertEqual(windows[1].upperBound, 60 + CueKind.transition.soundDuration + 0.4, accuracy: 1e-9)
     }
 

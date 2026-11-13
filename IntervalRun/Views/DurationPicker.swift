@@ -33,8 +33,13 @@ struct DurationPicker: View {
     }
 }
 
-/// One step of a custom pattern: a menu on the name (work/rest, reorder, delete)
-/// and a duration that expands into `DurationPicker` when tapped.
+/// The title Run or Walk for a pattern step's phase.
+extension Phase {
+    var stepTitle: String { self == .work ? "Run" : "Walk" }
+}
+
+/// One step of a custom pattern: a menu on the name (run/walk, reorder, delete)
+/// and a stepper whose value opens `DurationPicker` when tapped.
 struct PatternStepRow: View {
     @Binding var step: IntervalStep
     let number: Int
@@ -45,72 +50,106 @@ struct PatternStepRow: View {
     let onDelete: () -> Void
 
     var body: some View {
-        HStack {
-            Menu {
-                Picker("Type", selection: $step.phase) {
-                    Label("Work", systemImage: "figure.run").tag(Phase.work)
-                    Label("Rest", systemImage: "figure.walk").tag(Phase.rest)
+        VStack(spacing: 0) {
+            HStack {
+                Menu {
+                    Picker("Type", selection: $step.phase) {
+                        Label("Run", systemImage: "figure.run").tag(Phase.work)
+                        Label("Walk", systemImage: "figure.walk").tag(Phase.rest)
+                    }
+                    Button("Move Up", systemImage: "arrow.up") { onMoveUp?() }
+                        .disabled(onMoveUp == nil)
+                    Button("Move Down", systemImage: "arrow.down") { onMoveDown?() }
+                        .disabled(onMoveDown == nil)
+                    Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
+                } label: {
+                    HStack(spacing: 10) {
+                        PhaseDot(phase: step.phase)
+                        Text("\(number). \(step.phase.stepTitle)")
+                            .foregroundStyle(.primary)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                Button("Move Up", systemImage: "arrow.up") { onMoveUp?() }
-                    .disabled(onMoveUp == nil)
-                Button("Move Down", systemImage: "arrow.down") { onMoveDown?() }
-                    .disabled(onMoveDown == nil)
-                Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
-            } label: {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(step.phase.color)
-                        .frame(width: 10, height: 10)
-                    Text("\(number). \(step.phase == .work ? "Work" : "Rest")")
-                        .foregroundStyle(.primary)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+                .tint(.primary)
+                Spacer(minLength: 8)
+                DurationStepper(
+                    title: "\(number). \(step.phase.stepTitle)",
+                    seconds: $step.seconds,
+                    range: step.phase == .work ? 15...WorkoutPlan.maxIntervalSeconds : 0...WorkoutPlan.maxIntervalSeconds,
+                    step: 15,
+                    isExpanded: $isExpanded
+                )
             }
-            .tint(.primary)
-
-            Button {
-                withAnimation { isExpanded.toggle() }
-            } label: {
-                HStack {
-                    Spacer()
-                    Text(TimeFormat.clock(step.seconds))
-                        .monospacedDigit()
-                        .foregroundStyle(isExpanded ? Color.accentColor : .secondary)
-                }
-                .contentShape(Rectangle())
+            .padding(.horizontal, 16)
+            .frame(minHeight: 58)
+            if isExpanded {
+                DurationPicker(seconds: $step.seconds)
             }
-        }
-        .buttonStyle(.borderless)
-        if isExpanded {
-            DurationPicker(seconds: $step.seconds)
         }
     }
 }
 
-/// A form row showing a duration that expands into `DurationPicker` when tapped.
+/// A card row with a duration stepper; tapping the time opens `DurationPicker`
+/// for exact values.
 struct DurationRow: View {
     let title: String
+    var phase: Phase?
     @Binding var seconds: Int
+    var range = 0...WorkoutPlan.maxIntervalSeconds
+    var step = 15
     @Binding var isExpanded: Bool
 
     var body: some View {
-        Button {
-            withAnimation { isExpanded.toggle() }
-        } label: {
-            HStack {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                if let phase {
+                    PhaseDot(phase: phase)
+                }
                 Text(title)
-                    .foregroundStyle(.primary)
-                Spacer()
-                Text(TimeFormat.clock(seconds))
-                    .monospacedDigit()
-                    .foregroundStyle(isExpanded ? Color.accentColor : .secondary)
+                Spacer(minLength: 8)
+                DurationStepper(title: title, seconds: $seconds, range: range, step: step, isExpanded: $isExpanded)
+            }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 58)
+            if isExpanded {
+                DurationPicker(seconds: $seconds)
             }
         }
-        .tint(.primary)
-        if isExpanded {
-            DurationPicker(seconds: $seconds)
-        }
+    }
+}
+
+/// "− 1:30 +", stepping by `step`; the time toggles `isExpanded`.
+struct DurationStepper: View {
+    let title: String
+    @Binding var seconds: Int
+    let range: ClosedRange<Int>
+    let step: Int
+    @Binding var isExpanded: Bool
+
+    var body: some View {
+        StepperCapsule(
+            value: TimeFormat.clock(seconds),
+            accessibilityLabel: title,
+            canDecrement: seconds > range.lowerBound,
+            canIncrement: seconds < range.upperBound,
+            onDecrement: { seconds = DurationStep.down(seconds, step: step, in: range) },
+            onIncrement: { seconds = DurationStep.up(seconds, step: step, in: range) },
+            isHighlighted: isExpanded,
+            onTapValue: { withAnimation { isExpanded.toggle() } }
+        )
+    }
+}
+
+/// A small dot in a phase's color.
+struct PhaseDot: View {
+    let phase: Phase
+
+    var body: some View {
+        Circle()
+            .fill(phase.color)
+            .frame(width: 8, height: 8)
+            .accessibilityHidden(true)
     }
 }
